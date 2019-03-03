@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "simple_endpoint/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "simple_endpoint"
+  spec.name          = "simple-endpoint"
   spec.version       = SimpleEndpoint::VERSION
   spec.authors       = ["Alex Bal"]
   spec.email         = ["differencialx@gmail.com"]
