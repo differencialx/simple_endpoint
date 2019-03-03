@@ -15,7 +15,7 @@ module SimpleEndpoint
       )
     end
 
-    protected
+    private
     
     def endpoint_options(**additional_options)
       { params: params }.merge(additional_options)
@@ -23,17 +23,23 @@ module SimpleEndpoint
 
     def default_handler
       raise NotImplementedError, <<-LARGE_ERROR
-        Please implement handler via case statement
+        Please implement default_handler via case statement
 
         EXAMPLE:
         ###############################################
 
-        -> (kase, result) do
-          case kase
-          when :success then render json
-          else
-            # just in case you forgot to add handler for some of case
-            SimpleEndpoint::UnhadledResultError, 'Oh nooooo!!! Really???!!'
+        # Can be put into ApplicationController and redefined in subclasses
+        
+        private
+
+        def default_handler
+          -> (kase, result) do
+            case kase
+            when :success then render :json ...
+            else
+              # just in case you forgot to add handler for some of case
+              SimpleEndpoint::UnhadledResultError, 'Oh nooooo!!! Really???!!'
+            end
           end
         end
 
@@ -51,15 +57,21 @@ module SimpleEndpoint
 
         EXAMPLE:
         ###############################################
-        # default trailblazer-endpoint logic, you can change it 
-        {
-          present:         -> (result) { result.success? && result["present"] }
-          success:         -> (result) { result.success? },
-          created:         -> (result) { result.success? && result["model.action"] == :new }
-          invalid:         -> (result) { result.failure? },
-          not_found:       -> (result) { result.failure? && result["result.model"] && result["result.model"].failure? },
-          unauthenticated: -> (result) { result.failure? && result["result.policy.default"] && result["result.policy.default"].failure? }
-        }
+        # default trailblazer-endpoint logic, you can change it
+        # Can be put into ApplicationController and redefined in subclasses
+
+        private
+
+        def default_cases
+          {
+            present:         -> (result) { result.success? && result["present"] }
+            success:         -> (result) { result.success? },
+            created:         -> (result) { result.success? && result["model.action"] == :new }
+            invalid:         -> (result) { result.failure? },
+            not_found:       -> (result) { result.failure? && result["result.model"] && result["result.model"].failure? },
+            unauthenticated: -> (result) { result.failure? && result["result.policy.default"] && result["result.policy.default"].failure? }
+          }
+        end
 
         ###############################################
 
