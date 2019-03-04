@@ -6,7 +6,8 @@ Dry-matcher free implementation of trailblazer endpoint.
 Add this to your Gemfile:
 
 ```ruby
-gem 'simple-endpoint'
+gem 'simple_endpoint' # not released yet
+gem 'simple_endpoint', github: 'differencialx/simple_endpoint', :branch => 'master'
 ```
 
 ## Getting Started
