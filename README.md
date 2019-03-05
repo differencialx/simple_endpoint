@@ -72,7 +72,7 @@ Now you are able to use `endpoint` method at other controllers
 |---|---|---|---|
 | `:operation` | yes | - | Traiblazer operation class |
 | `:different_cases`| no | {} | Cases that should be redefined for exact `#endpoint` call |
-| `:options` | no | `#endpoint_options` method result | By default it is `{ params: params }` hash, more details about `#endpoint_options` method here |
+| `:options` | no | `#endpoint_options` method result | By default it is `{ params: params }` hash, you can redefine it in #endpoint_options method |
 
 
 #### Simple endpoint call
@@ -131,7 +131,7 @@ class PostsController < ApplicationController
 
   def different_cases
     {
-      success: (result) { result.success? && is_vasya_in_the_house? }
+      success: -> (result) { result.success? && is_vasya_in_the_house? }
     }
   end
 
@@ -165,13 +165,43 @@ class PostsController < ApplicationController
   end
 end
 ```
+
+#### Defining default params for trailblazer operation
+
+Default `#endpoint_options` method implementation
+
+```ruby
+  def endpoint_options
+    { params: params }
+  end
+```
+
+Redefining `endpoint_options`
+
+```ruby
+class PostsController < ApplicationController
+
+  private
+
+  def endpoint_options
+    { params: permitted_params }
+  end
+
+  def permitted_params
+    params.permit(:some, :attributes)
+  end
+end
+```
+
 #### Passing additional params to operation
+
+`options` will be merged with #endpoint_options method result and trailblazer operation will be executed with such params: `Post::Create.(params: params, current_user: current_user)`
 
 ```ruby
 class PostsController < ApplicationController
   def create
     endpoint operation: Post::Create,
-             options: endpoint_options(current_user: current_user)
+             options: { current_user: current_user }
   end
 end
 ```
@@ -184,12 +214,28 @@ You can do some actions before `#default_handler` invoke
 class PostsController < ApplicationController
   def create
     endpoint(operation: Post::Create) do |kase, result|
-      -> (kase, result) do
-        case kase
-        when :success then response.headers['Some-header'] = result[:some_data]
-        end
+      case kase
+      when :success then response.headers['Some-header'] = result[:some_data]
       end
     end 
+  end
+end
+
+# OR
+
+class PostsController < ApplicationController
+  def create
+    endpoint(operation: Post::Create, &posts_before_render_handler)
+  end
+
+  private
+
+  def posts_before_render_handler
+    -> (kase, result) do
+      case kase
+      when :success then response.headers['Some-header'] = result[:some_data]
+      end
+    end
   end
 end
 ```

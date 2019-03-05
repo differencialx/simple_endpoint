@@ -10,13 +10,9 @@ RSpec.describe SimpleEndpoint do
     end
 
     def default_handler
-      -> (kase, result) {
-        case kase
-        when :success then @instance_context = result.success
-        when :invalid then @instance_context = result.failure
-        else
-          raise SimpleEndpoint::UnhadledResultError, 'Oh nooooo!!! Really???!!'
-        end
+      {
+        success: -> (result) { @instance_context = result.success },
+        invalid: -> (result) { @instance_context = result.failure }
       }
     end
 
@@ -79,7 +75,7 @@ RSpec.describe SimpleEndpoint do
       let(:args) do
         {
           operation: operation_class,
-          options: dummy_instance.send(:endpoint_options, some_key: 'some value')
+          options: { some_key: 'some value' }
         }
       end
 
@@ -95,13 +91,15 @@ RSpec.describe SimpleEndpoint do
     end
 
     context 'before handler actions' do
+      let(:args) do
+        {
+          operation: operation_class,
+          before_render: { success: -> (result) { dummy_instance.before_context = result.success } }
+        }
+      end
+
       it do
-        dummy_instance.endpoint(**args) do |kase, result|
-          case kase
-          when :success 
-            dummy_instance.before_context = result.success
-          end
-        end
+        dummy_instance.endpoint(**args)
         expect(dummy_instance.before_context).to eq 'Success'
         expect(dummy_instance.instance_context).to eq 'Success'
       end
