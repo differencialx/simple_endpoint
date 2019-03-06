@@ -30,10 +30,8 @@ class ApplicationController < ActionController::Base
 
   def default_cases
     {
-      success:         -> (result) { result.success? },
-      invalid:         -> (result) { result.failure? },
-      not_found:       -> (result) { result.failure? && result["result.model"] && result["result.model"].failure? },
-      unauthenticated: -> (result) { result.failure? && result["result.policy.default"] && result["result.policy.default"].failure? }
+      success: -> (result) { result.success? },
+      invalid: -> (result) { result.failure? }
     }
   end
 end
@@ -48,19 +46,20 @@ class ApplicationController < ActionController::Base
   private
 
   def default_handler
-    -> (kase, result) do
-      case kase
-      when :success then render :json result['serializer'], status: 200
-      else
-        # just in case you forgot to add handler for some of cases
-        SimpleEndpoint::UnhadledResultError, 'Oh nooooo!!! Really???!!'
-      end
-    end
+    {
+      success: -> (result) { render json: result['model'], **result['render_options'] status: 200 },
+      invalid: -> (result) { render json: result['contract.default'].errors, serializer: ErrorSerializer, status: :unprocessable_entity }
+    }
   end
 end
 ```
 
-You'll receive `NotImplementedError` if `default_cases` or `default_handler` methods aren't defined.
+`OperationIsNotHandled` error will be raised if `#default_cases` doesn't contain case for specific operation result.
+
+`UnhadledResultError` will be raised if `#default_handler` doesn't contain for some cases.
+
+`NotImplementedError` will be raised if `default_cases` or `default_handler` methods aren't defined.
+
 
 ### #endpoint method
 
@@ -72,7 +71,9 @@ Now you are able to use `endpoint` method at other controllers
 |---|---|---|---|
 | `:operation` | yes | - | Traiblazer operation class |
 | `:different_cases`| no | {} | Cases that should be redefined for exact `#endpoint` call |
-| `:options` | no | `#endpoint_options` method result | By default it is `{ params: params }` hash, you can redefine it in #endpoint_options method |
+| `:different_handler` | no | {} | Case of handler that should be handled in different way |
+| `:options` | no | {} | Additional hash which will be merged to `#ednpoint_options` method result before operation execution |
+| `:before_render` | no | {} | Allow to process code before specific case handler |
 
 
 #### Simple endpoint call
@@ -118,7 +119,7 @@ Note that it'll override `ApplicationController#default_cases`
 
 #### Redefining cases for specific controller action
 
-Code below will redefine only `success` operation handling logic of `#default_cases` method, it doesn't matter where `#default_cases` was defied, at `ApplicationController` or `PostsController`
+Code below will redefine only `success` operation handling logic of `#default_cases` method, it doesn't matter where `#default_cases` was defined, at `ApplicationController` or `PostsController`
 
 ```ruby
 class PostsController < ApplicationController
@@ -154,16 +155,31 @@ class PostsController < ApplicationController
   private
 
   def default_handler
-    -> (kase, result) do
-      case kase
-      when :success then head :ok
-      else
-        # just in case you forgot to add handler for some of cases
-        SimpleEndpoint::UnhadledResultError, 'Oh nooooo!!! Really???!!'
-      end
-    end
+    {
+      success: -> (result) { head :ok }
+    }
   end
 end
+```
+
+#### Redefining handler for specific controller action
+
+```ruby
+class PostsController < ApplicationController
+  def create
+    endpoint operation: Post::Create,
+             different_handler: different_handler
+  end
+
+  private
+
+  def different_handler
+    {
+      success: -> (result) { render json: { message: 'Nice!' }, status: :created }
+    }
+  end
+end
+
 ```
 
 #### Defining default params for trailblazer operation
@@ -195,7 +211,7 @@ end
 
 #### Passing additional params to operation
 
-`options` will be merged with #endpoint_options method result and trailblazer operation will be executed with such params: `Post::Create.(params: params, current_user: current_user)`
+`options` will be merged with `#endpoint_options` method result and trailblazer operation will be executed with such params: `Post::Create.(params: params, current_user: current_user)`
 
 ```ruby
 class PostsController < ApplicationController
@@ -208,34 +224,22 @@ end
 
 #### Before handler actions
 
-You can do some actions before `#default_handler` invoke
+You can do some actions before `#default_handler` execution
 
 ```ruby
 class PostsController < ApplicationController
   def create
-    endpoint(operation: Post::Create) do |kase, result|
-      case kase
-      when :success then response.headers['Some-header'] = result[:some_data]
-      end
+    endpoint operation: Post::Create,
+             before_response: before_render_actions
     end 
-  end
-end
-
-# OR
-
-class PostsController < ApplicationController
-  def create
-    endpoint(operation: Post::Create, &posts_before_render_handler)
   end
 
   private
 
-  def posts_before_render_handler
-    -> (kase, result) do
-      case kase
-      when :success then response.headers['Some-header'] = result[:some_data]
-      end
-    end
+  def before_response_actions
+    {
+      success: -> (result) { response.headers['Some-header'] = result[:some_data] }
+    }
   end
 end
 ```

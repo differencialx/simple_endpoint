@@ -36,14 +36,10 @@ RSpec.describe SimpleEndpoint do
 
   subject(:endpoint) { dummy_instance.endpoint(**args) }
 
-  context 'success case' do
-    before do
-      expect(result).to receive(:success?).at_most(:twice) { true }
-      expect(result).to receive(:failure?).at_most(:twice) { false }
-    end
-
+  context 'Redefining cases' do
     context 'default behavior' do
       it do
+        expect(result).to receive(:success?) { true }
         endpoint
         expect(dummy_instance.before_context).to be_nil
         expect(dummy_instance.instance_context).to eq 'Success'
@@ -65,13 +61,42 @@ RSpec.describe SimpleEndpoint do
       end
 
       it do
+        expect(result).to receive(:failure?) { true }
         endpoint
         expect(dummy_instance.before_context).to be_nil
-        expect(dummy_instance.instance_context).to eq 'Failure'
+        expect(dummy_instance.instance_context).to eq 'Success'
       end
     end
 
-    context 'before handler action' do
+    context 'Redefining handler' do
+      context 'default behavior' do
+        it do
+          expect(result).to receive(:success?) { true }
+          endpoint
+          expect(dummy_instance.before_context).to be_nil
+          expect(dummy_instance.instance_context).to eq 'Success'
+        end
+      end
+
+      context 'redefined handler' do
+        let(:expected_instance_context) { 'Another context value' }
+        let(:args) do
+          {
+            operation: operation_class,
+            different_hander: { success: -> (result) { dummy_instance.instance_context = expected_instance_context } }
+          }
+        end
+
+        it do
+          expect(result).to receive(:success?) { true }
+          endpoint
+          expect(dummy_instance.before_context).to be_nil
+          expect(dummy_instance.instance_context).to eq expected_instance_context
+        end
+      end
+    end
+
+    context 'Pass additional params' do
       let(:args) do
         {
           operation: operation_class,
@@ -80,6 +105,7 @@ RSpec.describe SimpleEndpoint do
       end
 
       it do
+        expect(result).to receive(:success?) { true }
         expect(operation_class).to receive(:call).with(
           {
             params: { controller_param: 'controller_param' },
@@ -90,15 +116,16 @@ RSpec.describe SimpleEndpoint do
       end
     end
 
-    context 'before handler actions' do
+    context 'before response actions' do
       let(:args) do
         {
           operation: operation_class,
-          before_render: { success: -> (result) { dummy_instance.before_context = result.success } }
+          before_response: { success: -> (result) { dummy_instance.before_context = result.success } }
         }
       end
 
       it do
+        expect(result).to receive(:success?) { true }
         dummy_instance.endpoint(**args)
         expect(dummy_instance.before_context).to eq 'Success'
         expect(dummy_instance.instance_context).to eq 'Success'

@@ -2,12 +2,12 @@ require "simple_endpoint/version"
 
 module SimpleEndpoint
   module Controller
-    def endpoint(operation:, different_cases: {}, different_hander: {}, options: {}, before_render: {})
+    def endpoint(operation:, different_cases: {}, different_hander: {}, options: {}, before_response: {})
       Endpoint.(
         operation,
         default_handler.merge(different_hander),
         default_cases.merge(different_cases),
-        before_render,
+        before_response,
         endpoint_options.merge(options)
       )
     end
@@ -28,14 +28,14 @@ module SimpleEndpoint
   end
 
   class Endpoint
-    def self.call(operation, handler, cases, before_render = {}, **args)
+    def self.call(operation, handler, cases, before_response = {}, **args)
       result = operation.(**args)
-      new.(result, cases, handler, before_render)
+      new.(result, cases, handler, before_response)
     end
 
-    def call(result, cases, handler = {}, before_render = {})
+    def call(result, cases, handler = {}, before_response = {})
       matched_case = matched_case(cases, result)
-      procees_handler(matched_case, before_render, result, BeforeRenderHashIsInvalid) unless before_render.empty?
+      procees_handler(matched_case, before_response, result, BeforeRenderHashIsInvalid) unless before_response.empty?
       procees_handler(matched_case, handler, result)
     end
 
@@ -54,7 +54,9 @@ module SimpleEndpoint
     end
 
     def obtain_matched_key(cases, result)
-      cases.each { |kase, condition| break kase if condition.(result) }
+      matched_case = cases.each { |kase, condition| break kase if condition.(result) }
+      return if matched_case.is_a?(Hash)
+      matched_case
     end
   end
 
