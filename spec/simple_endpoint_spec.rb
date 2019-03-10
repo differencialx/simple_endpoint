@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 RSpec.describe SimpleEndpoint do
   Dummy = Class.new do
     include SimpleEndpoint::Controller
@@ -11,15 +13,15 @@ RSpec.describe SimpleEndpoint do
 
     def default_handler
       {
-        success: -> (result) { @instance_context = result.success },
-        invalid: -> (result) { @instance_context = result.failure }
+        success: ->(result) { @instance_context = result.success },
+        invalid: ->(result) { @instance_context = result.failure }
       }
     end
 
     def default_cases
       {
-        success: -> (result) { result.success? },
-        invalid: -> (result) { result.failure? }
+        success: ->(result) { result.success? },
+        invalid: ->(result) { result.failure? }
       }
     end
 
@@ -49,8 +51,8 @@ RSpec.describe SimpleEndpoint do
     context 'redefined cases' do
       let(:different_cases) do
         {
-          success: -> (result) { result.failure? },
-          invalid: -> (result) { result.success? }
+          success: ->(result) { result.failure? },
+          invalid: ->(result) { result.success? }
         }
       end
       let(:args) do
@@ -83,7 +85,7 @@ RSpec.describe SimpleEndpoint do
         let(:args) do
           {
             operation: operation_class,
-            different_hander: { success: -> (result) { dummy_instance.instance_context = expected_instance_context } }
+            different_hander: { success: ->(_result) { dummy_instance.instance_context = expected_instance_context } }
           }
         end
 
@@ -107,10 +109,8 @@ RSpec.describe SimpleEndpoint do
       it do
         expect(result).to receive(:success?) { true }
         expect(operation_class).to receive(:call).with(
-          {
-            params: { controller_param: 'controller_param' },
-            some_key: 'some value'
-          }
+          params: { controller_param: 'controller_param' },
+          some_key: 'some value'
         )
         endpoint
       end
@@ -120,7 +120,7 @@ RSpec.describe SimpleEndpoint do
       let(:args) do
         {
           operation: operation_class,
-          before_response: { success: -> (result) { dummy_instance.before_context = result.success } }
+          before_response: { success: ->(result) { dummy_instance.before_context = result.success } }
         }
       end
 
@@ -137,8 +137,8 @@ RSpec.describe SimpleEndpoint do
         it do
           expect(result).to receive(:success?) { false }
           expect(result).to receive(:failure?) { false }
-          expect{ endpoint }.to raise_error SimpleEndpoint::OperationIsNotHandled, 
-                                            'Current operation result is not handled at #default_cases method'
+          expect { endpoint }.to raise_error SimpleEndpoint::OperationIsNotHandled,
+                                             'Current operation result is not handled at #default_cases method'
         end
       end
 
@@ -147,7 +147,7 @@ RSpec.describe SimpleEndpoint do
           {
             operation: operation_class,
             different_cases: {
-              not_found: -> (result) { result.not_found? }
+              not_found: ->(result) { result.not_found? }
             }
           }
         end
@@ -156,8 +156,8 @@ RSpec.describe SimpleEndpoint do
           expect(result).to receive(:success?) { false }
           expect(result).to receive(:failure?) { false }
           expect(result).to receive(:not_found?) { true }
-          expect{ endpoint }.to raise_error SimpleEndpoint::UnhadledResultError,
-                                            /Key: not_found is not present at/
+          expect { endpoint }.to raise_error SimpleEndpoint::UnhadledResultError,
+                                             /Key: not_found is not present at/
         end
       end
     end

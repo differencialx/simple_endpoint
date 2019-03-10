@@ -1,0 +1,13 @@
+AllCops:
+  TargetRubyVersion: 2.3
+
+Metrics/LineLength:
+  Enabled: true
+  Max: 120
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**'
+
+Style/Documentation:
+  Enabled: false
