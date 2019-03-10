@@ -35,25 +35,25 @@ module SimpleEndpoint
 
     def call(result, cases, handler = {}, before_response = {})
       matched_case = matched_case(cases, result)
-      procees_handler(matched_case, before_response, result, BeforeRenderHashIsInvalid) unless before_response.empty?
-      procees_handler(matched_case, handler, result)
+      procees_handler(matched_case, before_response, result) unless before_response.empty?
+      procees_handler(matched_case, handler, result, UnhadledResultError)
     end
 
     def matched_case(cases, result)
-      matched_case = obtain_matched_key(cases, result)
-      raise OperationIsNotHandled, "Cuurent operation result is not handled at #default_cases method" unless matched_case
+      matched_case = obtain_matched_case(cases, result)
+      raise OperationIsNotHandled, "Current operation result is not handled at #default_cases method" unless matched_case
       matched_case
     end
 
-    def procees_handler(matched_case, handler, result, exception_class = UnhadledResultError)
+    def procees_handler(matched_case, handler, result, exception_class = nil)
       if handler.has_key?(matched_case)
-        handler[matched_case].(result)
-      else
+        handler[matched_case]&.(result)
+      elsif exception_class
         raise exception_class, "Key: #{matched_case} is not present at #{handler}"
       end
     end
 
-    def obtain_matched_key(cases, result)
+    def obtain_matched_case(cases, result)
       matched_case = cases.each { |kase, condition| break kase if condition.(result) }
       return if matched_case.is_a?(Hash)
       matched_case
@@ -62,7 +62,6 @@ module SimpleEndpoint
 
   class OperationIsNotHandled < StandardError ;end
   class UnhadledResultError < StandardError ;end
-  class BeforeRenderHashIsInvalid < StandardError ;end
 
   HANDLER_ERROR_MESSAGE = <<-LARGE_ERROR
     Please implement default_handler via case statement

@@ -131,5 +131,35 @@ RSpec.describe SimpleEndpoint do
         expect(dummy_instance.instance_context).to eq 'Success'
       end
     end
+
+    context 'raises errors' do
+      context 'OperationIsNotHandled' do
+        it do
+          expect(result).to receive(:success?) { false }
+          expect(result).to receive(:failure?) { false }
+          expect{ endpoint }.to raise_error SimpleEndpoint::OperationIsNotHandled, 
+                                            'Current operation result is not handled at #default_cases method'
+        end
+      end
+
+      context 'UnhadledResultError' do
+        let(:args) do
+          {
+            operation: operation_class,
+            different_cases: {
+              not_found: -> (result) { result.not_found? }
+            }
+          }
+        end
+
+        it do
+          expect(result).to receive(:success?) { false }
+          expect(result).to receive(:failure?) { false }
+          expect(result).to receive(:not_found?) { true }
+          expect{ endpoint }.to raise_error SimpleEndpoint::UnhadledResultError,
+                                            /Key: not_found is not present at/
+        end
+      end
+    end
   end
 end
