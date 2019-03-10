@@ -1,9 +1,11 @@
-require "simple_endpoint/version"
+# frozen_string_literal: true
+
+require 'simple_endpoint/version'
 
 module SimpleEndpoint
   module Controller
     def endpoint(operation:, different_cases: {}, different_hander: {}, options: {}, before_response: {})
-      Endpoint.(
+      Endpoint.call(
         operation,
         default_handler.merge(different_hander),
         default_cases.merge(different_cases),
@@ -13,7 +15,7 @@ module SimpleEndpoint
     end
 
     private
-    
+
     def endpoint_options
       { params: params }
     end
@@ -29,8 +31,8 @@ module SimpleEndpoint
 
   class Endpoint
     def self.call(operation, handler, cases, before_response = {}, **args)
-      result = operation.(**args)
-      new.(result, cases, handler, before_response)
+      result = operation.call(**args)
+      new.call(result, cases, handler, before_response)
     end
 
     def call(result, cases, handler = {}, before_response = {})
@@ -41,28 +43,31 @@ module SimpleEndpoint
 
     def matched_case(cases, result)
       matched_case = obtain_matched_case(cases, result)
-      raise OperationIsNotHandled, "Current operation result is not handled at #default_cases method" unless matched_case
+      raise OperationIsNotHandled, OPERATION_IS_NOT_HANDLER_ERROR unless matched_case
+
       matched_case
     end
 
     def procees_handler(matched_case, handler, result, exception_class = nil)
-      if handler.has_key?(matched_case)
-        handler[matched_case]&.(result)
+      if handler.key?(matched_case)
+        handler.dig(matched_case)&.(result)
       elsif exception_class
         raise exception_class, "Key: #{matched_case} is not present at #{handler}"
       end
     end
 
     def obtain_matched_case(cases, result)
-      matched_case = cases.each { |kase, condition| break kase if condition.(result) }
+      matched_case = cases.each { |kase, condition| break kase if condition.call(result) }
       return if matched_case.is_a?(Hash)
+
       matched_case
     end
   end
 
-  class OperationIsNotHandled < StandardError ;end
-  class UnhadledResultError < StandardError ;end
+  class OperationIsNotHandled < StandardError; end
+  class UnhadledResultError < StandardError; end
 
+  OPERATION_IS_NOT_HANDLER_ERROR = 'Current operation result is not handled at #default_cases method'
   HANDLER_ERROR_MESSAGE = <<-LARGE_ERROR
     Please implement default_handler via case statement
 
@@ -70,7 +75,7 @@ module SimpleEndpoint
     ###############################################
 
     # Can be put into ApplicationController and redefined in subclasses
-    
+
     private
 
     def default_handler
@@ -91,7 +96,7 @@ module SimpleEndpoint
     You can move this logic to separate singleton class
   LARGE_ERROR
 
-  CASES_ERROR_MESSAGE =  <<-LARGE_ERROR
+  CASES_ERROR_MESSAGE = <<-LARGE_ERROR
     Please implement default cases conditions via hash
 
     EXAMPLE:
