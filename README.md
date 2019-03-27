@@ -46,7 +46,7 @@ class ApplicationController < ActionController::Base
 
   def default_handler
     {
-      success: -> (result) { render json: result['model'], **result['render_options'] status: 200 },
+      success: -> (result) { render json: result['model'], **result['render_options'], status: 200 },
       invalid: -> (result) { render json: result['contract.default'].errors, serializer: ErrorSerializer, status: :unprocessable_entity }
     }
   end
