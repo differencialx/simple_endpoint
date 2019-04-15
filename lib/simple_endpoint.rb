@@ -4,10 +4,10 @@ require 'simple_endpoint/version'
 
 module SimpleEndpoint
   module Controller
-    def endpoint(operation:, different_cases: {}, different_hander: {}, options: {}, before_response: {})
+    def endpoint(operation:, different_cases: {}, different_handler: {}, options: {}, before_response: {})
       Endpoint.call(
         operation,
-        default_handler.merge(different_hander),
+        default_handler.merge(different_handler),
         default_cases.merge(different_cases),
         before_response,
         endpoint_options.merge(options)
