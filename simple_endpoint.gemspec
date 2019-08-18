@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = 'Simple implementation of Trailblazer endpoint'
   spec.description   = 'Simple implementation of Trailblazer endpoint'
-  spec.homepage      = ''
+  spec.homepage      = 'https://github.com/differencialx/simple_endpoint'
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.
