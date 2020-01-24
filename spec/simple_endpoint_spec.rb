@@ -51,7 +51,7 @@ RSpec.describe SimpleEndpoint do
         let(:args) do
           {
             operation: operation_class,
-            different_hander: {
+            different_handler: {
               success: ->(_result, **) { dummy_instance.instance_context = expected_instance_context }
             }
           }
@@ -145,7 +145,7 @@ RSpec.describe SimpleEndpoint do
       let(:args) do
         {
           operation: operation_class,
-          different_hander: { success: ->(_result, **opts) { dummy_instance.instance_context = opts } },
+          different_handler: { success: ->(_result, **opts) { dummy_instance.instance_context = opts } },
           renderer_options: renderer_options
         }
       end

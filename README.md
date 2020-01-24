@@ -1,4 +1,5 @@
 # SimpleEndpoint
+[![<differencialx>](https://circleci.com/gh/differencialx/simple_endpoint.svg?style=svg)](https://circleci.com/gh/differencialx/simple_endpoint)
 
 Dry-matcher free implementation of trailblazer endpoint.
 
@@ -100,7 +101,7 @@ class PostsController < ApplicationController
     {
       success: -> (result) { result.success? && is_it_raining? },
       invalid: -> (result) { result.failure? && is_vasya_in_the_house? }
-      ... # other cases 
+      ... # other cases
     }
   end
 
@@ -230,7 +231,7 @@ class PostsController < ApplicationController
   def create
     endpoint operation: Post::Create,
              before_response: before_render_actions
-    end 
+    end
   end
 
   private

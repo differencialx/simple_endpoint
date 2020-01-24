@@ -6,7 +6,7 @@ module SimpleEndpoint
   module Controller
     def endpoint(operation:,
                  different_cases: {},
-                 different_hander: {},
+                 different_handler: {},
                  options: {},
                  before_response: {},
                  renderer_options: {})
