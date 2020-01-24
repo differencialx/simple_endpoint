@@ -1,10 +1,15 @@
 # frozen_string_literal: true
 
 require 'simple_endpoint/version'
-
+# rubocop:disable Metrics/ParameterLists
 module SimpleEndpoint
   module Controller
-    def endpoint(operation:, different_cases: {}, different_hander: {}, options: {}, before_response: {}, renderer_options: {})
+    def endpoint(operation:,
+                 different_cases: {},
+                 different_hander: {},
+                 options: {},
+                 before_response: {},
+                 renderer_options: {})
       Endpoint.call(
         operation,
         default_handler.merge(different_hander),
@@ -125,3 +130,4 @@ module SimpleEndpoint
     You can move this to separate singleton class
   LARGE_ERROR
 end
+# rubocop:enable Metrics/ParameterLists
