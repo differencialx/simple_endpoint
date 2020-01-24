@@ -12,7 +12,7 @@ module SimpleEndpoint
                  renderer_options: {})
       Endpoint.call(
         operation,
-        default_handler.merge(different_hander),
+        default_handler.merge(different_handler),
         default_cases.merge(different_cases),
         renderer_options,
         before_response,

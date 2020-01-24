@@ -6,8 +6,7 @@ Dry-matcher free implementation of trailblazer endpoint.
 Add this to your Gemfile:
 
 ```ruby
-gem 'simple_endpoint' # not released yet
-gem 'simple_endpoint', github: 'differencialx/simple_endpoint', :branch => 'master'
+gem 'simple_endpoint'
 ```
 
 ## Getting Started
@@ -47,7 +46,7 @@ class ApplicationController < ActionController::Base
 
   def default_handler
     {
-      success: -> (result) { render json: result['model'], **result['render_options'] status: 200 },
+      success: -> (result) { render json: result['model'], **result['render_options'], status: 200 },
       invalid: -> (result) { render json: result['contract.default'].errors, serializer: ErrorSerializer, status: :unprocessable_entity }
     }
   end
