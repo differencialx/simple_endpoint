@@ -30,18 +30,18 @@ RSpec.describe SimpleEndpoint do
     end
   end
 
+  subject(:endpoint) { dummy_instance.endpoint(**args) }
+
   let(:operation_class) { double('Operation class', call: result) }
   let(:result) { double('Trailbalzer operation result', success: 'Success', failure: 'Failure') }
 
   let(:args) { { operation: operation_class } }
   let(:dummy_instance) { Dummy.new }
 
-  subject(:endpoint) { dummy_instance.endpoint(**args) }
-
   context 'Redefining cases' do
     context 'default behavior' do
       it do
-        expect(result).to receive(:success?) { true }
+        expect(result).to receive(:success?).and_return(true)
         endpoint
         expect(dummy_instance.before_context).to be_nil
         expect(dummy_instance.instance_context).to eq 'Success'
@@ -63,7 +63,7 @@ RSpec.describe SimpleEndpoint do
       end
 
       it do
-        expect(result).to receive(:failure?) { true }
+        expect(result).to receive(:failure?).and_return(true)
         endpoint
         expect(dummy_instance.before_context).to be_nil
         expect(dummy_instance.instance_context).to eq 'Success'
@@ -73,7 +73,7 @@ RSpec.describe SimpleEndpoint do
     context 'Redefining handler' do
       context 'default behavior' do
         it do
-          expect(result).to receive(:success?) { true }
+          expect(result).to receive(:success?).and_return(true)
           endpoint
           expect(dummy_instance.before_context).to be_nil
           expect(dummy_instance.instance_context).to eq 'Success'
@@ -90,7 +90,7 @@ RSpec.describe SimpleEndpoint do
         end
 
         it do
-          expect(result).to receive(:success?) { true }
+          expect(result).to receive(:success?).and_return(true)
           endpoint
           expect(dummy_instance.before_context).to be_nil
           expect(dummy_instance.instance_context).to eq expected_instance_context
@@ -107,7 +107,7 @@ RSpec.describe SimpleEndpoint do
       end
 
       it do
-        expect(result).to receive(:success?) { true }
+        expect(result).to receive(:success?).and_return(true)
         expect(operation_class).to receive(:call).with(
           params: { controller_param: 'controller_param' },
           some_key: 'some value'
@@ -125,7 +125,7 @@ RSpec.describe SimpleEndpoint do
       end
 
       it do
-        expect(result).to receive(:success?) { true }
+        expect(result).to receive(:success?).and_return(true)
         endpoint
         expect(dummy_instance.before_context).to eq 'Success'
         expect(dummy_instance.instance_context).to eq 'Success'
@@ -135,8 +135,8 @@ RSpec.describe SimpleEndpoint do
     context 'raises errors' do
       context 'OperationIsNotHandled' do
         it do
-          expect(result).to receive(:success?) { false }
-          expect(result).to receive(:failure?) { false }
+          expect(result).to receive(:success?).and_return(false)
+          expect(result).to receive(:failure?).and_return(false)
           expect { endpoint }.to raise_error SimpleEndpoint::OperationIsNotHandled,
                                              'Current operation result is not handled at #default_cases method'
         end
@@ -153,9 +153,9 @@ RSpec.describe SimpleEndpoint do
         end
 
         it do
-          expect(result).to receive(:success?) { false }
-          expect(result).to receive(:failure?) { false }
-          expect(result).to receive(:not_found?) { true }
+          expect(result).to receive(:success?).and_return(false)
+          expect(result).to receive(:failure?).and_return(false)
+          expect(result).to receive(:not_found?).and_return(true)
           expect { endpoint }.to raise_error SimpleEndpoint::UnhadledResultError,
                                              /Key: not_found is not present at/
         end
@@ -178,7 +178,7 @@ RSpec.describe SimpleEndpoint do
       end
 
       it do
-        expect(result).to receive(:success?) { true }
+        expect(result).to receive(:success?).and_return(true)
         endpoint
         expect(dummy_instance.instance_context).to eq renderer_options
       end

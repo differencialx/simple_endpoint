@@ -1,13 +1,23 @@
+require: rubocop-rspec
+
 AllCops:
-  TargetRubyVersion: 2.3
-
-Metrics/LineLength:
-  Enabled: true
-  Max: 120
-
-Metrics/BlockLength:
   Exclude:
-    - 'spec/**'
+    - 'simple_endpoint.gemspec'
 
 Style/Documentation:
   Enabled: false
+
+Metrics/LineLength:
+    Max: 120
+
+Style/FrozenStringLiteralComment:
+  Enabled: true
+
+Metrics/BlockLength:
+  ExcludedMethods: ['describe','context']
+
+RSpec/DescribeClass:
+  Enabled: false
+
+RSpec/NestedGroups:
+  Max: 4
