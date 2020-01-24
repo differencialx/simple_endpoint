@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    simple_endpoint (0.1.6)
+    simple_endpoint (1.0.0)
 
 GEM
   remote: https://rubygems.org/
