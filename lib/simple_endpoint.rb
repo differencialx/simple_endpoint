@@ -4,11 +4,12 @@ require 'simple_endpoint/version'
 
 module SimpleEndpoint
   module Controller
-    def endpoint(operation:, different_cases: {}, different_hander: {}, options: {}, before_response: {})
+    def endpoint(operation:, different_cases: {}, different_hander: {}, options: {}, before_response: {}, renderer_options: {})
       Endpoint.call(
         operation,
         default_handler.merge(different_hander),
         default_cases.merge(different_cases),
+        renderer_options,
         before_response,
         endpoint_options.merge(options)
       )
@@ -30,15 +31,15 @@ module SimpleEndpoint
   end
 
   class Endpoint
-    def self.call(operation, handler, cases, before_response = {}, **args)
+    def self.call(operation, handler, cases, renderer_options = {}, before_response = {}, **args)
       result = operation.call(**args)
-      new.call(result, cases, handler, before_response)
+      new.call(result, cases, renderer_options, handler, before_response)
     end
 
-    def call(result, cases, handler = {}, before_response = {})
+    def call(result, cases, renderer_options = {}, handler = {}, before_response = {})
       matched_case = matched_case(cases, result)
-      procees_handler(matched_case, before_response, result) unless before_response.empty?
-      procees_handler(matched_case, handler, result, UnhadledResultError)
+      procees_handler(matched_case, before_response, result, renderer_options) unless before_response.empty?
+      procees_handler(matched_case, handler, result, renderer_options, UnhadledResultError)
     end
 
     def matched_case(cases, result)
@@ -48,9 +49,9 @@ module SimpleEndpoint
       matched_case
     end
 
-    def procees_handler(matched_case, handler, result, exception_class = nil)
+    def procees_handler(matched_case, handler, result, renderer_options, exception_class = nil)
       if handler.key?(matched_case)
-        handler.dig(matched_case)&.(result)
+        handler.dig(matched_case)&.(result, **renderer_options)
       elsif exception_class
         raise exception_class, "Key: #{matched_case} is not present at #{handler}"
       end

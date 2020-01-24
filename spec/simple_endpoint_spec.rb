@@ -13,8 +13,8 @@ RSpec.describe SimpleEndpoint do
 
     def default_handler
       {
-        success: ->(result) { @instance_context = result.success },
-        invalid: ->(result) { @instance_context = result.failure }
+        success: ->(result, **) { @instance_context = result.success },
+        invalid: ->(result, **) { @instance_context = result.failure }
       }
     end
 
@@ -85,7 +85,7 @@ RSpec.describe SimpleEndpoint do
         let(:args) do
           {
             operation: operation_class,
-            different_hander: { success: ->(_result) { dummy_instance.instance_context = expected_instance_context } }
+            different_hander: { success: ->(_result, **) { dummy_instance.instance_context = expected_instance_context } }
           }
         end
 
@@ -120,13 +120,13 @@ RSpec.describe SimpleEndpoint do
       let(:args) do
         {
           operation: operation_class,
-          before_response: { success: ->(result) { dummy_instance.before_context = result.success } }
+          before_response: { success: ->(result, **) { dummy_instance.before_context = result.success } }
         }
       end
 
       it do
         expect(result).to receive(:success?) { true }
-        dummy_instance.endpoint(**args)
+        endpoint
         expect(dummy_instance.before_context).to eq 'Success'
         expect(dummy_instance.instance_context).to eq 'Success'
       end
@@ -159,6 +159,28 @@ RSpec.describe SimpleEndpoint do
           expect { endpoint }.to raise_error SimpleEndpoint::UnhadledResultError,
                                              /Key: not_found is not present at/
         end
+      end
+    end
+
+    context 'when serializer is passed' do
+      let(:renderer_options) do
+        {
+          serializer_class: 'SomeClass',
+          include: 'include_options'
+        }
+      end
+      let(:args) do
+        {
+          operation: operation_class,
+          different_hander: { success: ->(_result, **opts) { dummy_instance.instance_context = opts } },
+          renderer_options: renderer_options
+        }
+      end
+
+      it do
+        expect(result).to receive(:success?) { true }
+        endpoint
+        expect(dummy_instance.instance_context).to eq renderer_options
       end
     end
   end
