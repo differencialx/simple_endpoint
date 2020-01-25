@@ -1,4 +1,6 @@
 # SimpleEndpoint
+[![<differencialx>](https://circleci.com/gh/differencialx/simple_endpoint.svg?style=svg)](https://circleci.com/gh/differencialx/simple_endpoint)
+[![Gem Version](https://img.shields.io/gem/v/simple_endpoint.svg)](https://rubygems.org/gems/simple_endpoint)
 
 Dry-matcher free implementation of trailblazer endpoint.
 
@@ -6,7 +8,7 @@ Dry-matcher free implementation of trailblazer endpoint.
 Add this to your Gemfile:
 
 ```ruby
-gem 'simple_endpoint'
+gem 'simple_endpoint', '~> 1.0.0'
 ```
 
 ## Getting Started
@@ -46,8 +48,8 @@ class ApplicationController < ActionController::Base
 
   def default_handler
     {
-      success: -> (result) { render json: result['model'], **result['render_options'], status: 200 },
-      invalid: -> (result) { render json: result['contract.default'].errors, serializer: ErrorSerializer, status: :unprocessable_entity }
+      success: -> (result, **opts) { render json: result['model'], **opts, status: 200 },
+      invalid: -> (result, **) { render json: result['contract.default'].errors, serializer: ErrorSerializer, status: :unprocessable_entity }
     }
   end
 end
@@ -73,6 +75,7 @@ Now you are able to use `endpoint` method at other controllers
 | `:different_handler` | no | {} | Case of handler that should be handled in different way |
 | `:options` | no | {} | Additional hash which will be merged to `#ednpoint_options` method result before operation execution |
 | `:before_render` | no | {} | Allow to process code before specific case handler |
+| `:renderer_options` | no | {} | Allow to pass serializer options from controller and Will available inside handler as second parameter.
 
 
 #### Simple endpoint call
@@ -100,7 +103,7 @@ class PostsController < ApplicationController
     {
       success: -> (result) { result.success? && is_it_raining? },
       invalid: -> (result) { result.failure? && is_vasya_in_the_house? }
-      ... # other cases 
+      ... # other cases
     }
   end
 
@@ -155,7 +158,7 @@ class PostsController < ApplicationController
 
   def default_handler
     {
-      success: -> (result) { head :ok }
+      success: -> (result, **) { head :ok }
     }
   end
 end
@@ -174,7 +177,7 @@ class PostsController < ApplicationController
 
   def different_handler
     {
-      success: -> (result) { render json: { message: 'Nice!' }, status: :created }
+      success: -> (result, **) { render json: { message: 'Nice!' }, status: :created }
     }
   end
 end
@@ -230,17 +233,40 @@ class PostsController < ApplicationController
   def create
     endpoint operation: Post::Create,
              before_response: before_render_actions
-    end 
+    end
   end
 
   private
 
   def before_response_actions
     {
-      success: -> (result) { response.headers['Some-header'] = result[:some_data] }
+      success: -> (result, **) { response.headers['Some-header'] = result[:some_data] }
     }
   end
 end
 ```
 
 Code above will put data from operation result into response haeders before render
+
+
+#### Pass additional options from controller
+
+```ruby
+class PostsController < ApplicationController
+  def create
+    endpoint operation: Post::Create,
+             renderer_options: { serializer: SerializerClass }
+    end
+  end
+
+  private
+
+  def default_handler
+    {
+      # renderer_options will be available as **opts
+      success: -> (result, **opts) { render json: result['model'], **opts, status: 200 },
+      invalid: -> (result, **) { render json: result['contract.default'].errors, serializer: ErrorSerializer, status: :unprocessable_entity }
+    }
+  end
+end
+```
