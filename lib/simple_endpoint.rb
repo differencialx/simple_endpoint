@@ -63,10 +63,7 @@ module SimpleEndpoint
     end
 
     def obtain_matched_case(cases, result)
-      matched_case = cases.each { |kase, condition| break kase if condition.call(result) }
-      return if matched_case.is_a?(Hash)
-
-      matched_case
+      cases.detect { |_kase, condition| condition.call(result) }&.first
     end
   end
 
