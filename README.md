@@ -74,7 +74,7 @@ Now you are able to use `endpoint` method at other controllers
 | `:different_cases`| no | {} | Cases that should be redefined for exact `#endpoint` call |
 | `:different_handler` | no | {} | Case of handler that should be handled in different way |
 | `:options` | no | {} | Additional hash which will be merged to `#ednpoint_options` method result before operation execution |
-| `:before_render` | no | {} | Allow to process code before specific case handler |
+| `:before_response` | no | {} | Allow to process code before specific case handler |
 | `:renderer_options` | no | {} | Allow to pass serializer options from controller and Will available inside handler as second parameter.
 
 
