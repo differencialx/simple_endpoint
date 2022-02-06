@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'simple_endpoint/version'
 # rubocop:disable Metrics/ParameterLists
 module SimpleEndpoint
   module Controller
@@ -16,7 +15,7 @@ module SimpleEndpoint
         default_cases.merge(different_cases),
         renderer_options,
         before_response,
-        endpoint_options.merge(options)
+        **endpoint_options.merge(options)
       )
     end
 
@@ -56,7 +55,7 @@ module SimpleEndpoint
 
     def procees_handler(matched_case, handler, result, renderer_options, exception_class = nil)
       if handler.key?(matched_case)
-        handler.dig(matched_case)&.(result, **renderer_options)
+        handler[matched_case]&.(result, **renderer_options)
       elsif exception_class
         raise exception_class, "Key: #{matched_case} is not present at #{handler}"
       end

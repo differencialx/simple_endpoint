@@ -1,20 +1,23 @@
 require: rubocop-rspec
 
 AllCops:
+  TargetRubyVersion: 2.7
+  NewCops: enable
+  SuggestExtensions: false
   Exclude:
     - 'simple_endpoint.gemspec'
 
 Style/Documentation:
   Enabled: false
 
-Metrics/LineLength:
+Layout/LineLength:
     Max: 120
 
 Style/FrozenStringLiteralComment:
   Enabled: true
 
 Metrics/BlockLength:
-  ExcludedMethods: ['describe','context']
+  IgnoredMethods: ['describe','context']
 
 RSpec/DescribeClass:
   Enabled: false

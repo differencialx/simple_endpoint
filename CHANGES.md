@@ -1,6 +1,10 @@
 simple_endpoint changelog
 =====================
 
+[2022-02-09] Version 1.0.1
+---------------------------
+- Add Ruby 2.7+ support
+
 [2020-01-25] Version 1.0.0
 ---------------------------
 **Breaking changes**
