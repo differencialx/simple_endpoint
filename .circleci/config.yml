@@ -10,13 +10,16 @@ jobs:
   build:
     environment:
       RUBY_VERSION: << parameters.ruby_version >>
-      BUNDLER_VERSION: 2.1.2
     executor: test_executor
     parameters:
       ruby_version:
         type: string
     steps:
       - checkout
+
+      - run:
+          name: 'Update bundler'
+          command: 'bundle update --bundler'
 
       - run:
           name: Install dependencies
