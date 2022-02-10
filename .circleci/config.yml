@@ -1,25 +1,47 @@
-version: 2
+version: 2.1
+
+executors:
+  test_executor:
+    docker:
+      - image: circleci/ruby:${RUBY_VERSION}
+    working_directory: ~/simple_endpoint
+
 jobs:
   build:
-    working_directory: ~/decouplio
-    docker:
-      - image: ruby:2.6.0
+    environment:
+      RUBY_VERSION: << parameters.ruby_version >>
+    executor: test_executor
+    parameters:
+      ruby_version:
+        type: string
     steps:
       - checkout
 
       - restore_cache:
-          keys:
-            - decouplio-{{ checksum "Gemfile.lock" }}
-            - decouplio-
+           key: simple_endpoint-{{ checksum "Gemfile.lock" }}
+
       - run:
-          name: Install dependencies
-          command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs 4 --retry 3
+        name: Install dependencies
+        command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs 4 --retry 3
+
+      - run:
+          name: Run Rubocop
+          command: bundle exec rubocop
 
       - save_cache:
-          key: decouplio-{{ checksum "Gemfile.lock" }}
+          key: simple_endpoint-{{ checksum "Gemfile.lock" }}
           paths:
             - vendor/bundle
-
       - run:
           name: Run Tests
           command: bundle exec rspec
+
+workflows:
+  build_and_test:
+    jobs:
+      - build:
+          name: 'ruby 2.6.8'
+          ruby_version: 2.6.8
+      - build:
+          name: 'ruby 2.7.0'
+          ruby_version: 2.7.0

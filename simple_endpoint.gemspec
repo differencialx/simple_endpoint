@@ -36,6 +36,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'pry-byebug'
   spec.add_development_dependency 'rake', '~> 13.0'
   spec.add_development_dependency 'rspec', '~> 3.0'
-  spec.add_development_dependency 'rubocop', '~> 0.61.0'
+  spec.add_development_dependency 'rubocop', '~> 1.25.1'
   spec.add_development_dependency 'rubocop-rspec'
 end
