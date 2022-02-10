@@ -10,6 +10,7 @@ jobs:
   build:
     environment:
       RUBY_VERSION: << parameters.ruby_version >>
+      BUNDLER_VERSION: 2.1.4
     executor: test_executor
     parameters:
       ruby_version:
@@ -18,8 +19,8 @@ jobs:
       - checkout
 
       - run:
-          name: 'Update bundler'
-          command: 'bundle update --bundler'
+          name: 'Install bundler'
+          command: 'gem install bundler'
 
       - run:
           name: Install dependencies
