@@ -26,9 +26,9 @@ jobs:
           name: Install dependencies
           command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs 4 --retry 3
 
-      - run:
-          name: Run Rubocop
-          command: bundle exec rubocop
+      # - run:
+      #     name: Run Rubocop
+      #     command: bundle exec rubocop
 
       - run:
           name: Run Tests
