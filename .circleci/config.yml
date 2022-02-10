@@ -10,15 +10,13 @@ jobs:
   build:
     environment:
       RUBY_VERSION: << parameters.ruby_version >>
+      BUNDLER_VERSION: 2
     executor: test_executor
     parameters:
       ruby_version:
         type: string
     steps:
       - checkout
-
-      - restore_cache:
-          key: simple_endpoint-{{ checksum "Gemfile.lock" }}
 
       - run:
           name: Install dependencies
@@ -27,11 +25,6 @@ jobs:
       - run:
           name: Run Rubocop
           command: bundle exec rubocop
-
-      - save_cache:
-          key: simple_endpoint-{{ checksum "Gemfile.lock" }}
-          paths:
-            - vendor/bundle
 
       - run:
           name: Run Tests
