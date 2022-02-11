@@ -8,7 +8,7 @@ Dry-matcher free implementation of trailblazer endpoint.
 Add this to your Gemfile:
 
 ```ruby
-gem 'simple_endpoint', '~> 1.0.0'
+gem 'simple_endpoint', '~> 1.0.2'
 ```
 
 ## Getting Started
