@@ -46,6 +46,3 @@ workflows:
       - build:
           name: 'ruby 3.0.3'
           ruby_version: 3.0.3
-      - build:
-          name: 'ruby 3.1.0'
-          ruby_version: 3.1.0
