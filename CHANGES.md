@@ -1,6 +1,10 @@
 simple_endpoint changelog
 =====================
 
+[2022-02-12] Version 1.0.2
+---------------------------
+- Add Ruby 3+ support
+
 [2022-02-09] Version 1.0.1
 ---------------------------
 - Add Ruby 2.7+ support
