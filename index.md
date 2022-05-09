@@ -1,37 +1,272 @@
-## Welcome to GitHub Pages
+# SimpleEndpoint
+[![<differencialx>](https://circleci.com/gh/differencialx/simple_endpoint.svg?style=svg)](https://circleci.com/gh/differencialx/simple_endpoint)
+[![Gem Version](https://img.shields.io/gem/v/simple_endpoint.svg)](https://rubygems.org/gems/simple_endpoint)
 
-You can use the [editor on GitHub](https://github.com/differencialx/simple_endpoint/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+Dry-matcher free implementation of trailblazer endpoint.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+## Installation
+Add this to your Gemfile:
 
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+```ruby
+gem 'simple_endpoint', '~> 1.0.2'
 ```
 
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
+## Getting Started
 
-### Jekyll Themes
+Include simple endpoint to your base controller
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/differencialx/simple_endpoint/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+```ruby
+class ApplicationController < ActionController::Base
+  include SimpleEndpoint::Controller
+end
+```
 
-### Support or Contact
+Define `default_cases` method to specify trailblazer operation result handling
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+```ruby
+class ApplicationController < ActionController::Base
+  include SimpleEndpoint::Controller
+
+  private
+
+  def default_cases
+    {
+      success: -> (result) { result.success? },
+      invalid: -> (result) { result.failure? }
+    }
+  end
+end
+```
+
+Define `default_handler` method to specify how to handle each case
+
+```ruby
+class ApplicationController < ActionController::Base
+  include SimpleEndpoint::Controller
+
+  private
+
+  def default_handler
+    {
+      success: -> (result, **opts) { render json: result['model'], **opts, status: 200 },
+      invalid: -> (result, **) { render json: result['contract.default'].errors, serializer: ErrorSerializer, status: :unprocessable_entity }
+    }
+  end
+end
+```
+
+`OperationIsNotHandled` error will be raised if `#default_cases` doesn't contain case for specific operation result.
+
+`UnhadledResultError` will be raised if `#default_handler` doesn't contain for some cases.
+
+`NotImplementedError` will be raised if `default_cases` or `default_handler` methods aren't defined.
+
+
+### #endpoint method
+
+Now you are able to use `endpoint` method at other controllers
+
+`#endpoint` method has next signature:
+
+| Key | Required | Default value | Description  |
+|---|---|---|---|
+| `:operation` | yes | - | Traiblazer operation class |
+| `:different_cases`| no | {} | Cases that should be redefined for exact `#endpoint` call |
+| `:different_handler` | no | {} | Case of handler that should be handled in different way |
+| `:options` | no | {} | Additional hash which will be merged to `#ednpoint_options` method result before operation execution |
+| `:before_response` | no | {} | Allow to process code before specific case handler |
+| `:renderer_options` | no | {} | Allow to pass serializer options from controller and Will available inside handler as second parameter.
+
+
+#### Simple endpoint call
+```ruby
+class PostsController < ApplicationController
+  def create
+    endpoint operation: Post::Create
+  end
+end
+```
+
+#### Redefining cases for specific controller
+
+If you need to redefine operation result handling for specific controller you can do next
+
+```ruby
+class PostsController < ApplicationController
+  def create
+    endpoint operation: Post::Create
+  end
+
+  private
+
+  def default_cases
+    {
+      success: -> (result) { result.success? && is_it_raining? },
+      invalid: -> (result) { result.failure? && is_vasya_in_the_house? }
+      ... # other cases
+    }
+  end
+
+  def is_it_raining?
+    WeatherForecast.for_today.raining?
+  end
+
+  def is_vasya_in_the_house?
+    User.find_by(login: 'vasya').signed_in?
+  end
+end
+```
+
+Note that it'll override `ApplicationController#default_cases`
+
+#### Redefining cases for specific controller action
+
+Code below will redefine only `success` operation handling logic of `#default_cases` method, it doesn't matter where `#default_cases` was defined, at `ApplicationController` or `PostsController`
+
+```ruby
+class PostsController < ApplicationController
+  def create
+    endpoint operation:       Post::Create,
+             different_cases: different_cases
+  end
+
+  private
+
+  def different_cases
+    {
+      success: -> (result) { result.success? && is_vasya_in_the_house? }
+    }
+  end
+
+  def is_vasya_in_the_house?
+    User.find_by(login: 'vasya').signed_in?
+  end
+end
+```
+
+#### Redefining handler for specific controller
+
+If you need to redefine handler logic, simply redefine `#default_handler` method
+
+```ruby
+class PostsController < ApplicationController
+  def create
+    endpoint operation: Post::Create
+  end
+
+  private
+
+  def default_handler
+    {
+      success: -> (result, **) { head :ok }
+    }
+  end
+end
+```
+
+#### Redefining handler for specific controller action
+
+```ruby
+class PostsController < ApplicationController
+  def create
+    endpoint operation: Post::Create,
+             different_handler: different_handler
+  end
+
+  private
+
+  def different_handler
+    {
+      success: -> (result, **) { render json: { message: 'Nice!' }, status: :created }
+    }
+  end
+end
+
+```
+
+#### Defining default params for trailblazer operation
+
+Default `#endpoint_options` method implementation
+
+```ruby
+  def endpoint_options
+    { params: params }
+  end
+```
+
+Redefining `endpoint_options`
+
+```ruby
+class PostsController < ApplicationController
+
+  private
+
+  def endpoint_options
+    { params: permitted_params }
+  end
+
+  def permitted_params
+    params.permit(:some, :attributes)
+  end
+end
+```
+
+#### Passing additional params to operation
+
+`options` will be merged with `#endpoint_options` method result and trailblazer operation will be executed with such params: `Post::Create.(params: params, current_user: current_user)`
+
+```ruby
+class PostsController < ApplicationController
+  def create
+    endpoint operation: Post::Create,
+             options: { current_user: current_user }
+  end
+end
+```
+
+#### Before handler actions
+
+You can do some actions before `#default_handler` execution
+
+```ruby
+class PostsController < ApplicationController
+  def create
+    endpoint operation: Post::Create,
+             before_response: before_render_actions
+    end
+  end
+
+  private
+
+  def before_response_actions
+    {
+      success: -> (result, **) { response.headers['Some-header'] = result[:some_data] }
+    }
+  end
+end
+```
+
+Code above will put data from operation result into response haeders before render
+
+
+#### Pass additional options from controller
+
+```ruby
+class PostsController < ApplicationController
+  def create
+    endpoint operation: Post::Create,
+             renderer_options: { serializer: SerializerClass }
+    end
+  end
+
+  private
+
+  def default_handler
+    {
+      # renderer_options will be available as **opts
+      success: -> (result, **opts) { render json: result['model'], **opts, status: 200 },
+      invalid: -> (result, **) { render json: result['contract.default'].errors, serializer: ErrorSerializer, status: :unprocessable_entity }
+    }
+  end
+end
+```
