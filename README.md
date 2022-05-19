@@ -57,7 +57,7 @@ end
 
 `OperationIsNotHandled` error will be raised if `#default_cases` doesn't contain case for specific operation result.
 
-`UnhadledResultError` will be raised if `#default_handler` doesn't contain for some cases.
+`UnhandledResultError` will be raised if `#default_handler` doesn't contain for some cases.
 
 `NotImplementedError` will be raised if `default_cases` or `default_handler` methods aren't defined.
 
