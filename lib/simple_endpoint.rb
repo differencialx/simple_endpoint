@@ -43,7 +43,7 @@ module SimpleEndpoint
     def call(result, cases, renderer_options = {}, handler = {}, before_response = {})
       matched_case = matched_case(cases, result)
       procees_handler(matched_case, before_response, result, renderer_options) unless before_response.empty?
-      procees_handler(matched_case, handler, result, renderer_options, UnhadledResultError)
+      procees_handler(matched_case, handler, result, renderer_options, UnhandledResultError)
     end
 
     def matched_case(cases, result)
@@ -67,7 +67,7 @@ module SimpleEndpoint
   end
 
   class OperationIsNotHandled < StandardError; end
-  class UnhadledResultError < StandardError; end
+  class UnhandledResultError < StandardError; end
 
   OPERATION_IS_NOT_HANDLER_ERROR = 'Current operation result is not handled at #default_cases method'
   HANDLER_ERROR_MESSAGE = <<-LARGE_ERROR
@@ -86,7 +86,7 @@ module SimpleEndpoint
         when :success then render :json ...
         else
           # just in case you forgot to add handler for some of case
-          SimpleEndpoint::UnhadledResultError, 'Oh nooooo!!! Really???!!'
+          SimpleEndpoint::UnhandledResultError, 'Oh nooooo!!! Really???!!'
         end
       end
     end

@@ -107,7 +107,7 @@ RSpec.describe SimpleEndpoint do
         end
       end
 
-      context 'with UnhadledResultError' do
+      context 'with UnhandledResultError' do
         let(:args) do
           {
             operation: operation_class,
@@ -124,7 +124,7 @@ RSpec.describe SimpleEndpoint do
         end
 
         specify do
-          expect { endpoint }.to raise_error SimpleEndpoint::UnhadledResultError,
+          expect { endpoint }.to raise_error SimpleEndpoint::UnhandledResultError,
                                              /Key: not_found is not present at/
         end
       end
