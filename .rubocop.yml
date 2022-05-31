@@ -1,4 +1,6 @@
-require: rubocop-rspec
+require:
+  - rubocop-performance
+  - rubocop-rspec
 
 AllCops:
   TargetRubyVersion: 3.1
@@ -6,6 +8,7 @@ AllCops:
   SuggestExtensions: false
   Exclude:
     - 'simple_endpoint.gemspec'
+    - 'vendor/**/*'
 
 Style/Documentation:
   Enabled: false
@@ -24,3 +27,9 @@ RSpec/DescribeClass:
 
 RSpec/NestedGroups:
   Max: 4
+
+Style/HashSyntax:
+  EnforcedShorthandSyntax: never
+
+Naming/BlockForwarding:
+  EnforcedStyle: explicit
