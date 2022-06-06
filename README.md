@@ -8,7 +8,7 @@ Dry-matcher free implementation of trailblazer endpoint.
 Add this to your Gemfile:
 
 ```ruby
-gem 'simple_endpoint', '~> 1.0.2'
+gem 'simple_endpoint', '~> 2.0.0'
 ```
 
 ## Getting Started
@@ -21,8 +21,19 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-Define `default_cases` method to specify trailblazer operation result handling
+Define `cases` to specify trailblazer operation result handling.
 
+```ruby
+class ApplicationController < ActionController::Base
+  include SimpleEndpoint::Controller
+
+  cases do
+    match(:success) { |result| result.success? }
+    match(:invalid) { |result| result.failure? }
+  end
+end
+```
+or
 ```ruby
 class ApplicationController < ActionController::Base
   include SimpleEndpoint::Controller
@@ -38,8 +49,19 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-Define `default_handler` method to specify how to handle each case
+Define `handler` to specify how to handle each case
 
+```ruby
+class ApplicationController < ActionController::Base
+  include SimpleEndpoint::Controller
+
+  handler do
+    on(:success) { |result, **opts| render json: result['model'], **opts, status: 200 }
+    on(:invalid) { |result, **| render json: result['contract.default'].errors, serializer: ErrorSerializer, status: :unprocessable_entity }
+  end
+end
+```
+or `default_handler` method
 ```ruby
 class ApplicationController < ActionController::Base
   include SimpleEndpoint::Controller
@@ -55,11 +77,11 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-`OperationIsNotHandled` error will be raised if `#default_cases` doesn't contain case for specific operation result.
+`OperationIsNotHandled` error will be raised if `cases`/`#default_cases` doesn't contain case for specific operation result.
 
-`UnhandledResultError` will be raised if `#default_handler` doesn't contain for some cases.
+`UnhandledResultError` will be raised if `handler`/`#default_hadnler` doesn't contain for some cases.
 
-`NotImplementedError` will be raised if `default_cases` or `default_handler` methods aren't defined.
+`NotImplementedError` will be raised if `cases`/`#default_cases` or `handler`/`#default_hadnler` aren't defined.
 
 
 ### #endpoint method
@@ -91,6 +113,54 @@ end
 
 If you need to redefine operation result handling for specific controller you can do next
 
+It will redefine or add only **these** cases
+```ruby
+class PostsController < ApplicationController
+  cases do
+    match(:success) { |result| result.success? && is_it_raining? }
+    match(:invalid) { |result| result.failure? && is_vasya_in_the_house? }
+  end
+
+  def create
+    endpoint operation: Post::Create
+  end
+
+  private
+
+  def is_it_raining?
+    WeatherForecast.for_today.raining?
+  end
+
+  def is_vasya_in_the_house?
+    User.find_by(login: 'vasya').signed_in?
+  end
+end
+```
+If you want to remove parent cases use `inherit` option
+It will remove cases and add new ones
+```ruby
+class PostsController < ApplicationController
+  cases(inherit: false) do
+    match(:success) { |result| result.success? && is_it_raining? }
+    match(:invalid) { |result| result.failure? && is_vasya_in_the_house? }
+  end
+
+  def create
+    endpoint operation: Post::Create
+  end
+
+  private
+
+  def is_it_raining?
+    WeatherForecast.for_today.raining?
+  end
+
+  def is_vasya_in_the_house?
+    User.find_by(login: 'vasya').signed_in?
+  end
+end
+```
+or manually create `default_cases` method. Note that it'll override `ApplicationController#default_cases`
 ```ruby
 class PostsController < ApplicationController
   def create
@@ -117,12 +187,25 @@ class PostsController < ApplicationController
 end
 ```
 
-Note that it'll override `ApplicationController#default_cases`
-
 #### Redefining cases for specific controller action
 
-Code below will redefine only `success` operation handling logic of `#default_cases` method, it doesn't matter where `#default_cases` was defined, at `ApplicationController` or `PostsController`
+Code below will redefine only `success` operation handling logic of `cases`/`#default_cases`, it doesn't matter where `cases`/`#default_cases` was defined, at `ApplicationController` or `PostsController`
 
+```ruby
+class PostsController < ApplicationController
+  def create
+    cases { on(:success) { |result| result.success? && is_vasya_in_the_house? } }
+    endpoint operation: Post::Create
+  end
+
+  private
+
+  def is_vasya_in_the_house?
+    User.find_by(login: 'vasya').signed_in?
+  end
+end
+```
+or
 ```ruby
 class PostsController < ApplicationController
   def create
@@ -146,8 +229,31 @@ end
 
 #### Redefining handler for specific controller
 
-If you need to redefine handler logic, simply redefine `#default_handler` method
+If you need to redefine handler logic, simply redefine `handler`. It'll redefine only `success` handler
+```ruby
+class PostsController < ApplicationController
+  handler do
+    on(:success) { |result, **| head :ok }
+  end
 
+  def create
+    endpoint operation: Post::Create
+  end
+end
+```
+If you want remove parent handler settings you can use `inherit` option. It'll remove all other settings.
+```ruby
+class PostsController < ApplicationController
+  handler(inherit: false) do
+    on(:success) { |result, **| head :ok }
+  end
+
+  def create
+    endpoint operation: Post::Create
+  end
+end
+```
+or redefine `default_handler` method
 ```ruby
 class PostsController < ApplicationController
   def create
@@ -169,6 +275,17 @@ end
 ```ruby
 class PostsController < ApplicationController
   def create
+    handler { on(:success) { |result, **| render json: { message: 'Nice!' }, status: :created } }
+    endpoint operation: Post::Create,
+             different_handler: different_handler
+  end
+end
+
+```
+or
+```ruby
+class PostsController < ApplicationController
+  def create
     endpoint operation: Post::Create,
              different_handler: different_handler
   end
@@ -181,7 +298,6 @@ class PostsController < ApplicationController
     }
   end
 end
-
 ```
 
 #### Defining default params for trailblazer operation
@@ -195,7 +311,27 @@ Default `#endpoint_options` method implementation
 ```
 
 Redefining `endpoint_options`
+It will extend existing options
+```ruby
+class PostsController < ApplicationController
+  endpoint_options { { params: permitted_params } }
 
+  def permitted_params
+    params.permit(:some, :attributes)
+  end
+end
+```
+If you want to remove previously defined options you can use `inherit` option
+```ruby
+class PostsController < ApplicationController
+  endpoint_options(inherit: false) { { params: permitted_params } }
+
+  def permitted_params
+    params.permit(:some, :attributes)
+  end
+end
+```
+Or redefine `endpoint_options` method
 ```ruby
 class PostsController < ApplicationController
 
@@ -228,6 +364,20 @@ end
 
 You can do some actions before `#default_handler` execution
 
+```ruby
+class PostsController < ApplicationController
+  def create
+    before_response do
+      on(:success) do |result, **|
+        response.headers['Some-header'] = result[:some_data]
+      end
+    end
+    endpoint operation: Post::Create
+    end
+  end
+end
+```
+or
 ```ruby
 class PostsController < ApplicationController
   def create
@@ -267,6 +417,34 @@ class PostsController < ApplicationController
       success: -> (result, **opts) { render json: result['model'], **opts, status: 200 },
       invalid: -> (result, **) { render json: result['contract.default'].errors, serializer: ErrorSerializer, status: :unprocessable_entity }
     }
+  end
+end
+```
+### Migration from v1 to v2
+:warning::warning::warning:
+**Be cautious while using v2.x.x. We executing blocks and lambdas explicitly on the instance of the class where `SimpleEndpoint::Controller` module were included. That's related to `handler`/`#default_handler`, `cases`/`#default_cases` and `before_response`.
+If you are creating lambdas or blocks for handler and cases in different class with internal methods usage it won't work unlike the v1**
+:warning::warning::warning:
+
+```ruby
+class Handler
+  def self.call
+    { 
+      success: ->(result, **) { result.success? && some_method? }
+    }
+  end
+
+  private
+
+  def some_method?
+    true
+  end
+end
+
+class ApplicationController
+  def default_handler
+    # works with v1 but will cause an error in v2
+    Handler.call
   end
 end
 ```
